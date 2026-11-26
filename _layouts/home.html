@@ -1,0 +1,72 @@
+---
+layout: default
+---
+{% assign featured = site.posts | where: "featured", true | first %}
+{% if featured == nil %}{% assign featured = site.posts | first %}{% endif %}
+
+<section class="hero container">
+  <div class="hero-text">
+    <span class="eyebrow">~/notes <i class="caret"></i></span>
+    <!-- Edit your headline here. <mark> = highlighted word, <del> = struck-through word -->
+    <h1 class="hero-title">Don't worry, I can also <mark>hack</mark> <del>u</del> the lab boxes.</h1>
+    <p class="hero-sub">Notes, walkthroughs and cheat sheets from my CPTS journey. If the terminal's closed, I'm probably reading another module.</p>
+  </div>
+
+  <aside class="hero-card" aria-label="About me">
+    <img class="avatar" src="{{ '/assets/img/avatar.svg' | relative_url }}" alt="{{ site.title }} avatar" width="96" height="96">
+    <dl class="stats">
+      {% for s in site.hero.stats %}
+        <div class="stat">
+          <dt>{{ s.label }}</dt>
+          <dd{% if s.highlight %} class="hl"{% endif %}>{{ s.value }}</dd>
+        </div>
+      {% endfor %}
+    </dl>
+  </aside>
+</section>
+
+{% if featured %}
+  {% assign fwords = featured.content | number_of_words %}
+  {% assign fmins = fwords | divided_by: 200 | plus: 1 %}
+  <section class="container featured-wrap">
+    <a class="featured" href="{{ featured.url | relative_url }}">
+      {% if featured.badge %}<span class="badge">{{ featured.badge }}</span>{% endif %}
+      <span class="card-cat">{{ featured.categories | last }}</span>
+      <h2 class="featured-title">{{ featured.title }}</h2>
+      <p class="featured-excerpt">{% if featured.description %}{{ featured.description }}{% else %}{{ featured.excerpt | strip_html | strip_newlines | truncate: 260 }}{% endif %}</p>
+      <span class="featured-foot">
+        <span class="card-meta">{{ featured.date | date: "%d %b %Y" }} <i>/</i> {{ fmins }} MIN</span>
+        <span class="read">READ &rarr;</span>
+      </span>
+    </a>
+  </section>
+{% endif %}
+
+<section class="container list-wrap">
+  <h2 class="section-label"><span>ALL NOTES</span></h2>
+
+  <div class="chips" role="toolbar" aria-label="Filter posts by category">
+    <button class="chip active" type="button" data-filter="all">ALL</button>
+    {% assign all_cats = "" | split: "" %}
+    {% for post in site.posts %}
+      {% unless featured and post.url == featured.url %}
+        {% assign all_cats = all_cats | concat: post.categories %}
+      {% endunless %}
+    {% endfor %}
+    {% assign all_cats = all_cats | uniq | sort %}
+    {% for cat in all_cats %}
+      <button class="chip" type="button" data-filter="{{ cat | slugify }}">{{ cat }}</button>
+    {% endfor %}
+  </div>
+
+  <div class="post-list" id="post-list">
+    {% for post in site.posts %}
+      {% unless featured and post.url == featured.url %}
+        {% include post-card.html post=post %}
+      {% endunless %}
+    {% endfor %}
+  </div>
+  <p class="empty" id="empty" hidden>Nothing here yet.</p>
+
+  <p class="eof">// end of file</p>
+</section>

@@ -1,0 +1,17 @@
+---
+layout: page
+title: Categories
+subtitle: Every note, grouped by topic.
+permalink: /categories/
+---
+{% assign cats = site.categories | sort %}
+{% for cat in cats %}
+<section class="group" id="{{ cat[0] | slugify }}">
+<h2 class="group-title">{{ cat[0] }} <span class="count">{{ cat[1].size }}</span></h2>
+<ul class="entry-list">
+{% for post in cat[1] %}
+<li><span class="entry-date">{{ post.date | date: "%d %b %Y" }}</span><a href="{{ post.url | relative_url }}">{{ post.title }}</a></li>
+{% endfor %}
+</ul>
+</section>
+{% endfor %}

@@ -1,0 +1,69 @@
+# ─────────────────────────────────────────────
+#  SITE SETTINGS  (edit these first)
+# ─────────────────────────────────────────────
+title: CPTS Methodology
+tagline: Aspiring Pentester & CPTS Candidate
+description: Notes, walkthroughs and cheat sheets from my HTB CPTS journey. Enumeration, web attacks, privilege escalation and more.
+
+# Your GitHub Pages address, e.g. https://octocat.github.io
+url: "https://github.com/Getting-Nowhere/Getting-Nowhere.github.io.git"
+baseurl: ""            # keep empty for a USERNAME.github.io repo
+lang: en
+timezone: Asia/Kolkata
+
+# Social links (leave a value empty to hide it)
+social:
+  github: "https://github.com/YOURUSERNAME"
+  x: ""
+  linkedin: ""
+  twitter_username: ""
+
+# Hero card on the home page
+hero:
+  stats:
+    - { label: "NAME",   value: "YourHandle" }
+    - { label: "ROLE",   value: "Pentester in training" }
+    - { label: "BOXES",  value: "0" }
+    - { label: "TARGET", value: "CPTS", highlight: true }
+
+# ─────────────────────────────────────────────
+#  BUILD SETTINGS  (no need to touch)
+# ─────────────────────────────────────────────
+permalink: /posts/:title/
+markdown: kramdown
+highlighter: rouge
+kramdown:
+  input: GFM
+  hard_wrap: false
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    block:
+      line_numbers: true
+
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+feed:
+  path: feed.xml
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md
+  - node_modules
+  - vendor
+  - .gitignore
+
+defaults:
+  - scope:
+      path: ""
+      type: "posts"
+    values:
+      layout: post
+      toc: true
+  - scope:
+      path: ""
+    values:
+      layout: page

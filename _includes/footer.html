@@ -1,0 +1,13 @@
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <a class="brand" href="{{ '/' | relative_url }}">{{ site.title | upcase }}</a>
+    <nav class="footer-links" aria-label="Social">
+      {% if site.social.x != "" and site.social.x %}<a href="{{ site.social.x }}" rel="noopener" target="_blank">X</a>{% endif %}
+      {% if site.social.github != "" and site.social.github %}<a href="{{ site.social.github }}" rel="noopener" target="_blank">GITHUB</a>{% endif %}
+      {% if site.social.linkedin != "" and site.social.linkedin %}<a href="{{ site.social.linkedin }}" rel="noopener" target="_blank">LINKEDIN</a>{% endif %}
+      <a href="{{ '/feed.xml' | relative_url }}">RSS</a>
+      <span class="copy">&copy; {{ 'now' | date: "%Y" }}</span>
+    </nav>
+    <button class="to-top" type="button" aria-label="Back to top">&uarr; TOP</button>
+  </div>
+</footer>

@@ -1,0 +1,55 @@
+---
+layout: default
+---
+{% assign words = content | number_of_words %}
+{% assign mins = words | divided_by: 200 | plus: 1 %}
+
+<article class="post container">
+  <header class="post-header">
+    <div class="crumbs">
+      {% for c in page.categories %}<a href="{{ '/categories/' | relative_url }}#{{ c | slugify }}">{{ c }}</a>{% unless forloop.last %} <i>/</i> {% endunless %}{% endfor %}
+    </div>
+    <h1 class="post-title">{{ page.title }}</h1>
+    <div class="post-meta">
+      <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%d.%m.%Y" }}</time>
+      <span class="sep">/</span>
+      <span>{{ mins }} MIN</span>
+      {% if page.tags.size > 0 %}
+        <span class="tags">
+          {% for tag in page.tags %}<a class="tag" href="{{ '/tags/' | relative_url }}#{{ tag | slugify }}">#{{ tag }}</a>{% endfor %}
+        </span>
+      {% endif %}
+    </div>
+    {% if page.cover %}
+      <img class="cover" src="{{ page.cover | relative_url }}" alt="{{ page.cover_alt | default: page.title }}">
+    {% endif %}
+  </header>
+
+  <div class="post-grid">
+    <div class="post-content">
+      {{ content }}
+    </div>
+
+    {% if page.toc != false %}
+      <aside class="toc" aria-label="Table of contents">
+        <div class="toc-label">ON THIS PAGE</div>
+        <nav id="toc"></nav>
+      </aside>
+    {% endif %}
+  </div>
+
+  <nav class="post-nav" aria-label="Post navigation">
+    {% if page.previous %}
+      <a class="nav-card prev" href="{{ page.previous.url | relative_url }}">
+        <span class="nav-dir">&larr; OLDER</span>
+        <strong>{{ page.previous.title }}</strong>
+      </a>
+    {% else %}<span></span>{% endif %}
+    {% if page.next %}
+      <a class="nav-card next" href="{{ page.next.url | relative_url }}">
+        <span class="nav-dir">NEWER &rarr;</span>
+        <strong>{{ page.next.title }}</strong>
+      </a>
+    {% else %}<span></span>{% endif %}
+  </nav>
+</article>
