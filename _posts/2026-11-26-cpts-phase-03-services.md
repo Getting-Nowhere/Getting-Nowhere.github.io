@@ -13,6 +13,89 @@ Investigate each discovered protocol and establish its authentication and author
 > Use this methodology only for systems and test identities within an explicitly authorized assessment. Validate the minimum necessary impact and preserve sanitized evidence.
 {: .tip }
 
+## Decision tree
+
+```text
+Listening port
+  |-- Protocol uncertain -> fingerprint before choosing a test
+  |-- Unauthenticated visibility -> compare expected public access
+  |-- Authentication required -> use supplied test role
+  `-- Access confirmed -> distinguish read, write and management permissions
+       |-- Unexpected permission -> validate and record
+       `-- Expected permission -> next service
+```
+
+## Protocol-specific field checks
+
+### SMB — start with share visibility
+
+```bash
+smbclient -N -L //TARGET_IP
+smbclient -L //TARGET_IP -U TEST_USER
+rpcclient -N -U "" TARGET_IP
+```
+
+Inside an authorized RPC session, `querydominfo` establishes domain context. A successful share listing does not establish read or write permission. Compare share access and underlying filesystem ACLs using an approved test identity. If the service is a domain member, continue to the AD page.
+
+### FTP — identify authentication and transport
+
+```bash
+openssl s_client -connect TARGET_IP:21 -starttls ftp
+```
+
+If anonymous access is offered, verify its intended scope; distinguish list, read and write rights. If an account is required, use the issued test account. A banner alone does not establish a vulnerable FTP deployment.
+
+### DNS — identify authoritative infrastructure
+
+```bash
+dig NS DOMAIN @DNS_IP
+dig MX DOMAIN @DNS_IP
+dig SOA DOMAIN @DNS_IP
+```
+
+If the server is authoritative, distinguish recursive resolution from authoritative responses. Record delegated zones and confirm newly discovered names are in scope. Review whether zone transfers are restricted through approved configuration checks.
+
+### NFS — correlate exports and permissions
+
+On an authorized server, review the original configuration:
+
+```bash
+cat /etc/exports
+```
+
+Check permitted clients, read/write mode, and root-squash settings. A mounted export does not by itself demonstrate unintended privilege.
+
+### SMTP, POP3 and IMAP
+
+```bash
+telnet TARGET_IP 25
+```
+
+Within the SMTP session use `EHLO assessment.example` and `QUIT` to inspect advertised capabilities. Check STARTTLS and authentication requirements; do not send mail to unrelated recipients. On an approved mail server review `/etc/postfix/main.cf` and compare the relay policy with documented intent.
+
+### Databases
+
+```bash
+sudo nmap -sV -p 3306,1433,1521 TARGET_IP
+mysql -h TARGET_IP -u TEST_USER -p
+```
+
+After login, use the authorized database and inspect permissions rather than assuming a database login is a host administrator. Distinguish server roles from individual database roles and record intended access.
+
+### SNMP and management services
+
+If UDP/161 or UDP/623 is observed, establish management protocol and version. On an approved SNMP server, inspect `/etc/snmp/snmpd.conf` without publishing community strings. Check whether access is restricted to management networks. Treat IPMI and database management endpoints as privileged boundaries.
+
+| If found | Check next | Avoid |
+|---|---|---|
+| Readable SMB share | Intended audience, data classification, ACLs | Equating a readable share with unrestricted host access |
+| NFS export | Client restrictions, root mapping, file ownership | Writing to production exports |
+| Database listener | Authentication, permitted schema and role | Assuming a version match is proof |
+| SMTP capability | TLS, relay restrictions, intended users | Sending unsolicited mail |
+| Management endpoint | Source network, protocol and access policy | Broad high-impact scripts |
+
+**Study-note basis:** Footprinting host-based protocol notes and Attacking Common Services.
+
 ## Assessment workflow
 
 ### 1. Establish a service baseline

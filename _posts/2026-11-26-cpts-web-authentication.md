@@ -13,6 +13,33 @@ Review login forms, HTTP authentication, password policy and account-level prote
 > Use this methodology only for systems and test identities within an explicitly authorized assessment. Validate the minimum necessary impact and preserve sanitized evidence.
 {: .tip }
 
+## Decision tree
+
+```text
+Login flow
+  |-- Failure indicator uncertain -> establish baseline with test identities
+  |-- Lockout/rate limit -> stop at approved budget
+  |-- Session issued -> confirm actual authenticated identity
+  `-- Reset flow -> verify expiry, binding and one-time use
+```
+
+## Capture the authentication flow before testing it
+
+Record the normal request for an assigned test account, the failure response, any CSRF token, the redirect and resulting session cookie. HTTP Basic authentication, HTML forms and API logins have different request formats and failure indicators.
+
+| Observation | Next check |
+|---|---|
+| Failure message varies | Compare known synthetic valid and invalid account identifiers |
+| HTTP 200 on a failed login | Identify the real failure marker in the body |
+| 302 after authentication | Check the destination and actual session state |
+| CSRF token changes | Preserve the issued token in the authorized test request |
+| Lockout or throttling appears | Stop repeated attempts; record threshold and recovery behavior |
+| Password reset link | Verify expiry, binding and one-time use with your own test account |
+
+The notes separate dictionary, brute-force, hybrid and custom wordlist approaches and discuss Hydra and Medusa. For a public assessment reference, distinguish those concepts and the required failure marker and lockout policy; do not reproduce credential-guessing commands or lists. Verify rate limiting against a controlled test account with a pre-agreed small budget.
+
+**Study-note basis:** Basic HTTP Authentication, Login Forms, Hydra, Medusa, How Brute Forcing works, Dictionary Attacks, Hybrid Attacks.
+
 ## Assessment workflow
 
 ### 1. Identify authentication flows

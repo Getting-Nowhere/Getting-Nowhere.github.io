@@ -13,6 +13,40 @@ Review directory-backed input, server-side property binding and other applicatio
 > Use this methodology only for systems and test identities within an explicitly authorized assessment. Validate the minimum necessary impact and preserve sanitized evidence.
 {: .tip }
 
+## Decision tree
+
+```text
+Request contains directory input or extra properties
+  |-- LDAP-backed feature -> inspect filter construction and escaping
+  `-- Object update -> compare server allowlist and actual persistence
+       -> Confirm only on synthetic test data
+```
+
+## LDAP injection
+
+Start with the directory-backed feature's normal behavior. Determine whether request values become LDAP filter components, a distinguished name or simply ordinary input. In source review, check escaping appropriate to the specific context and whether query construction is separated from user input.
+
+| Observation | Next check |
+|---|---|
+| Directory error | Determine whether it is a validation or LDAP parser error |
+| Search results differ | Compare expected results for known synthetic entries |
+| Authentication backed by LDAP | Check filter construction and service-account permissions |
+
+## Mass assignment
+
+Capture an ordinary update for a disposable test profile. Compare the visible fields with the API's accepted data model. Use a harmless synthetic field for validation; do not change privileged roles or other accounts.
+
+```json
+{
+  "displayName": "Assessment Fixture",
+  "assessmentMarker": "test-value"
+}
+```
+
+If the extra field is silently ignored, record that behavior. If accepted, verify whether it is actually persisted and whether the field is supposed to be writable. A returned field is not necessarily a writable field. Review explicit server-side allowlists and per-field authorization.
+
+**Study-note basis:** LDAP, Web Mass Assignment Vulnerabilities, Prevention.
+
 ## Assessment workflow
 
 ### 1. Review LDAP-backed functions

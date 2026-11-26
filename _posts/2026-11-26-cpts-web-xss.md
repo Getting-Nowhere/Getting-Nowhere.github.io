@@ -13,6 +13,66 @@ Distinguish reflected, stored, DOM-based and blind XSS; assess execution context
 > Use this methodology only for systems and test identities within an explicitly authorized assessment. Validate the minimum necessary impact and preserve sanitized evidence.
 {: .tip }
 
+## Decision tree
+
+```text
+Harmless marker
+  |-- Raw response -> reflected branch
+  |-- Persists on later view -> stored branch
+  |-- Only live DOM -> source/sink branch
+  `-- Only other assigned test role -> blind rendering branch
+       -> Identify output context -> benign proof -> record affected roles
+```
+
+## Step 1 — Determine where input appears
+
+Submit a unique harmless marker such as `XSS_ASSESSMENT_42`. Search the raw response in the proxy and the live DOM in developer tools. Do not assume these are the same.
+
+| Observation | Branch |
+|---|---|
+| Marker in immediate HTTP response | Reflected XSS |
+| Marker returns after reload or a second test account views it | Stored XSS |
+| Marker appears in DOM but not raw response | DOM XSS |
+| Marker appears only in another authorized test role | Blind/stored rendering path |
+
+## Step 2 — Identify output context
+
+Check whether input lands in HTML text, a quoted attribute, JavaScript data, a URL or a DOM sink. Test harmless delimiters individually and observe output encoding. HTML escaping does not automatically protect JavaScript or URL contexts.
+
+### Reflected and stored proof in an isolated test page
+
+The original notes use a harmless browser-origin alert to demonstrate execution:
+
+```html
+<script>alert(window.origin)</script>
+```
+
+Use it only on an approved disposable test page or test record. For stored behavior, remove the record after verification. If a marker appears as text but does not execute, record reflection rather than XSS.
+
+### DOM source and sink
+
+The notes demonstrate this unsafe flow:
+
+```javascript
+var pos = document.URL.indexOf("task=");
+var task = document.URL.substring(pos + 5, document.URL.length);
+document.getElementById("todo").innerHTML = "<b>Next Task:</b> " + decodeURIComponent(task);
+```
+
+Trace URL input through decoding and assignment to `innerHTML`. For comparison, a text-only assignment avoids interpreting the input as markup:
+
+```javascript
+document.getElementById("todo").textContent = task;
+```
+
+### Impact branches
+
+The original notes distinguish defacement, phishing, blind XSS and session hijacking. Demonstrate only benign rendering or execution, then assess affected roles, cookie attributes, CSP and session architecture. Do not capture user credentials, cookies or sessions as proof.
+
+**Common misses:** alternate rendering views, stored content shown to administrators, source-versus-DOM differences, encoding at multiple layers, and CSP blocking execution without removing the unsafe sink.
+
+**Study-note basis:** Reflected XSS, Stored XSS, DOM XSS, XSS Discovery, Defacing, Phishing, Session Hijacking, Defense.
+
 ## Assessment workflow
 
 ### 1. Trace the input

@@ -13,6 +13,23 @@ Turn observations into reproducible findings, verify remediation and complete th
 > Use this methodology only for systems and test identities within an explicitly authorized assessment. Validate the minimum necessary impact and preserve sanitized evidence.
 {: .tip }
 
+## Convert a lead into a finding
+
+```text
+Asset / endpoint:
+Identity and vantage point:
+Expected behavior:
+Observed behavior:
+Minimal reproduction and negative control:
+Prerequisite and affected boundary:
+Impact (confirmed versus hypothetical):
+Remediation:
+Retest:
+Cleanup:
+```
+
+If the result is not reproducible, classify it as inconclusive. If the result is a version match without configuration evidence, classify it as a potential exposure. If a permission issue is proven but no impact test is authorized, describe the proven permission and state the unverified impact explicitly. The reporting tracker is an editorial addition, not a quotation from the source vault.
+
 ## Assessment workflow
 
 ### 1. Validate findings

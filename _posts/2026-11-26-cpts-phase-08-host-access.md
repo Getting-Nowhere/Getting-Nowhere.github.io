@@ -13,6 +13,64 @@ Establish reliable host and session context; document permitted transfer and exe
 > Use this methodology only for systems and test identities within an explicitly authorized assessment. Validate the minimum necessary impact and preserve sanitized evidence.
 {: .tip }
 
+## Decision tree
+
+```text
+Authorized session
+  |-- Identity uncertain -> establish effective token and groups
+  |-- Linux -> Linux privilege assessment
+  |-- Windows -> Windows privilege assessment
+  |-- Domain membership -> AD assessment
+  `-- Additional network interface -> verify scope, then assess segmentation
+```
+
+## Establish a reliable session context
+
+### Linux
+
+```bash
+id
+cat /etc/os-release
+uname -a
+echo "$PATH"
+ip a
+cat /etc/hosts
+ps aux
+```
+
+### Windows
+
+```cmd
+whoami /all
+systeminfo
+tasklist /svc
+ipconfig /all
+netstat -ano
+query user
+```
+
+If a command fails, distinguish shell syntax, tool availability, access denial and a disconnected session. If a local listener appears, associate it with its owning process before treating it as another application.
+
+### Transfer only an approved test artifact
+
+```bash
+wget https://APPROVED_ARTIFACT_HOST/check.txt -O check.txt
+curl -o check.txt https://APPROVED_ARTIFACT_HOST/check.txt
+sha256sum check.txt
+```
+
+Verify the expected hash and approved source. Do not pipe unknown downloads directly into an interpreter. Record where temporary artifacts are placed and remove them at closeout.
+
+| Finding | Next action |
+|---|---|
+| Linux host | Linux privilege page |
+| Windows host | Windows privilege page |
+| Domain context | AD page in parallel with local checks |
+| Multiple interfaces | Network segmentation page; confirm newly discovered scope |
+| Missing tool | Use equivalent native inventory commands rather than installing software without approval |
+
+**Study-note basis:** Shells and Payloads, Linux File Transfer Methods, Environment Enumeration, Windows Initial Enumeration.
+
 ## Assessment workflow
 
 ### 1. Confirm the access context

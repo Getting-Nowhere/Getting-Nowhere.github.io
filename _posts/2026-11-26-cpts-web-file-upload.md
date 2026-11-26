@@ -13,6 +13,49 @@ Review upload validation, storage, retrieval and downstream processing without u
 > Use this methodology only for systems and test identities within an explicitly authorized assessment. Validate the minimum necessary impact and preserve sanitized evidence.
 {: .tip }
 
+## Decision tree
+
+```text
+Normal upload
+  |-- UI rejects -> inspect client-side rules
+  |-- Server rejects -> identify server-side validation
+  `-- Server accepts -> inspect stored name, type and access
+       |-- Downloaded -> authorization and disposition
+       |-- Rendered -> content isolation
+       `-- Processed -> parser and safe failure behavior
+```
+
+## Test each upload control independently
+
+Start by uploading an approved, harmless file through the normal UI. Record filename, MIME type, multipart field, response and resulting resource URL. Verify what the server actually stored.
+
+```bash
+printf 'assessment fixture\n' > assessment.txt
+file assessment.txt
+```
+
+Use a disposable assessment record; do not upload executable content to shared production paths.
+
+| Observation | Next check |
+|---|---|
+| UI rejects the file before transmission | Inspect the client-side validation logic; verify server independently with harmless fixtures |
+| Request is rejected server-side | Identify whether extension, declared MIME or content signature caused rejection |
+| Server accepts but renames file | Determine normalized name, storage location and access policy |
+| File is downloadable | Check owner versus other test-role authorization |
+| File is rendered inline | Review content type, disposition, isolation and browser interpretation |
+| Image or document is transformed | Identify parser, processing stage and safe failure behavior |
+
+The source notes distinguish blacklist filters, whitelist filters, client-side validation and MIME/type filters. A declared `Content-Type` is supplied by the client; it is not proof of actual file contents. A filename extension does not establish how the server serves or interprets a resource.
+
+### Common misses
+
+- Testing only UI validation and never server validation.
+- Confusing acceptance with execution.
+- Ignoring normalized names, generated URLs and file ownership.
+- Forgetting asynchronous processing, size limits and cleanup.
+
+**Study-note basis:** Absent Validation, Client Side Validation, Blacklist Filters, Whitelist Filters, Type Filters, Limited File Uploads, Other Upload Attacks, Mitigations.
+
 ## Assessment workflow
 
 ### 1. Map the complete file lifecycle

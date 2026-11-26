@@ -13,6 +13,53 @@ Review account protections, credential-handling practices and the scope of appro
 > Use this methodology only for systems and test identities within an explicitly authorized assessment. Validate the minimum necessary impact and preserve sanitized evidence.
 {: .tip }
 
+## Decision tree
+
+```text
+Authentication evidence
+  |-- Unknown type -> identify source and protocol
+  |-- Policy unknown -> establish restrictions before testing
+  |-- Approved test account -> confirm identity and authorization separately
+  `-- Exposure confirmed -> record location and impact without disclosing secrets
+```
+
+## Credential assessment workflow
+
+1. Establish whether the material is a plaintext secret, password hash, challenge-response value, certificate or ticket. They are not interchangeable.
+2. Determine the expected authentication protocol and account context: local, domain or application.
+3. Confirm account policy and approved test budget before performing authentication checks.
+4. Compare intended access with observed access using supplied test identities.
+
+### Understand hashing with synthetic data
+
+```bash
+echo -n 'assessment-sample' | sha256sum
+echo -n 'assessment-sample' | md5sum
+```
+
+These are illustrative digest operations from the hashing notes, not recommendations for storing passwords. Salts make identical passwords produce different stored values; encoding is reversible and is not hashing.
+
+### Policy checks
+
+```cmd
+net accounts
+net accounts /domain
+```
+
+Record threshold, observation window, duration and the permitted test-account budget. If the policy is unknown, do not begin repeated authentication attempts.
+
+| Observation | Check next |
+|---|---|
+| Hash format unknown | Identify originating application and algorithm; do not infer solely from length |
+| Same password used by two issued test accounts | Document policy or provisioning weakness; do not expand to unrelated accounts |
+| Domain login works, service denies access | Check resource authorization and required authentication mechanism |
+| Service account identified | Determine purpose, privilege and rotation policy |
+| Sensitive value in configuration | Record location and exposure without copying the value into public notes |
+
+The source chapters cover Hashcat, John, protected archives, Windows and Linux credential storage, and pass-the-hash/ticket/certificate concepts. For a public methodology, distinguish these mechanisms and document their prerequisites and defensive controls; credential extraction, cracking campaigns and reuse procedures are not reproduced here.
+
+**Study-note basis:** Password Attacks, Hashcat, John The Ripper, Windows/Linux Authentication process, and AD password-policy notes.
+
 ## Assessment workflow
 
 ### 1. Establish identity context

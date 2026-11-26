@@ -13,6 +13,97 @@ Evaluate Linux identity, delegated privileges, file permissions, privileged exec
 > Use this methodology only for systems and test identities within an explicitly authorized assessment. Validate the minimum necessary impact and preserve sanitized evidence.
 {: .tip }
 
+## Decision tree
+
+```text
+Linux session
+  |-- Sudo entries -> inspect run-as identity, command and arguments
+  |-- SUID/SGID or capabilities -> verify owner, mode and mount context
+  |-- Privileged process or job -> identify actual files and directory ACLs
+  |-- Special group or container -> check resource permissions
+  `-- No configuration lead -> verify package and kernel patch context
+       -> Confirm weakness or park missing prerequisites
+```
+
+## 1. Establish the current context
+
+```bash
+id
+cat /etc/os-release
+uname -a
+echo "$PATH"
+lscpu
+lsblk
+cat /etc/fstab
+getent group sudo
+ls /home
+```
+
+Check whether this is a normal user, service account, container identity or restricted shell. Identify group membership and filesystem mounts before investigating binaries.
+
+## 2. Sudo and special permissions
+
+```bash
+sudo -l
+find / -user root -perm -4000 -exec ls -ldb {} \; 2>/dev/null
+find / -user root -perm -2000 -exec ls -ldb {} \; 2>/dev/null
+find /usr/bin /usr/sbin /usr/local/bin /usr/local/sbin -type f -exec getcap {} \; 2>/dev/null
+```
+
+| If found | Verify | Next check |
+|---|---|---|
+| Sudo entry | Run-as identity, exact executable, arguments and tags | Review the permitted functionality and whether it exceeds intended role |
+| SUID/SGID binary | Owner, group, mount restrictions, package provenance | Compare custom binary with intended design |
+| Capability | Exact capability and owning executable | Review security boundary affected, particularly filesystem or identity operations |
+| Special group | Group's actual resource permissions | Check sockets, devices and management interfaces |
+
+Do not assume a known binary has the same behavior on every build. A permission is a lead, not a demonstrated escalation.
+
+## 3. Privileged processes and scheduled execution
+
+```bash
+ps aux | grep root
+ls -la /etc/cron.daily/
+cat /etc/crontab
+systemctl list-timers
+find / -path /proc -prune -o -type f -perm -o+w -print 2>/dev/null
+```
+
+Correlate a privileged job with its actual command, interpreter, owner, directory and execution schedule. Check write permissions on the script **and its parent directory**. A writable script that is never executed by a privileged identity is not equivalent to a privileged scheduled task.
+
+## 4. Services, installed packages and configuration
+
+```bash
+ip a
+cat /etc/hosts
+ss -tulnp
+apt list --installed
+sudo -V
+find / -type f \( -name '*.conf' -o -name '*.config' \) -exec ls -l {} \; 2>/dev/null
+find / -type f -name '*.sh' 2>/dev/null | grep -v 'src\|snap\|share'
+```
+
+The `apt` command applies to Debian-derived systems. Inventory configuration metadata; review authorized samples and avoid publishing secret values. For loopback-only services, identify the process and intended local access policy.
+
+## 5. PATH, libraries, containers and version-specific checks
+
+- If a privileged program calls a helper by name, review the actual execution environment, not merely your interactive PATH.
+- If a privileged program loads a shared library or Python module, identify the resolved file and directory permissions. Distinguish an import path from a writable path actually used by that program.
+- If container tooling is present, inspect group membership, socket ownership and host mounts. `docker image ls` can establish image visibility with an approved identity; container root is not automatically host root.
+- If considering Dirty Pipe, Netfilter, Polkit, Sudo or a kernel issue, verify the exact distribution package and backported fixes before classifying the host as affected.
+
+### Stop or continue?
+
+| Lead | Continue only if |
+|---|---|
+| Writable file | A relevant privileged consumer exists |
+| Unusual SUID binary | Its owner, mode and behavior support a boundary issue |
+| Writable PATH directory | The privileged process actually uses it |
+| Container socket | The current identity has unintended access |
+| Kernel version match | Build, patch and configuration prerequisites are established |
+
+**Study-note basis:** Environment Enumeration, Linux Services and Internals, Special Permissions, Capabilities, Sudo Right Abuse, Cron Job Abuse, Path Abuse, Python Library Hijacking, Shared Object Hijacking, Docker, Kernel Exploits.
+
 ## Assessment workflow
 
 ### 1. Inventory the system

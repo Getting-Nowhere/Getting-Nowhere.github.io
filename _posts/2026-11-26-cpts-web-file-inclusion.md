@@ -13,6 +13,54 @@ Review local and remote file references, path containment and server-side inclus
 > Use this methodology only for systems and test identities within an explicitly authorized assessment. Validate the minimum necessary impact and preserve sanitized evidence.
 {: .tip }
 
+## Decision tree
+
+```text
+User-controlled resource reference
+  |-- Path error -> identify base path and restrictions
+  |-- Raw file response -> file-read boundary
+  |-- Rendered content -> inclusion boundary
+  `-- No difference -> check endpoint behavior and fixture
+       -> Confirm using synthetic resource outside intended directory
+```
+
+## Identify the actual filesystem operation
+
+The source notes illustrate four distinct PHP patterns:
+
+```php
+include($_GET['language']);
+include("./languages/" . $_GET['language']);
+include("lang_" . $_GET['language']);
+include($_GET['language'] . ".php");
+```
+
+These are unsafe examples for source review, not recommended implementation. They differ in base path, prefix and suffix restrictions. A file download endpoint may only read a file, whereas `include` can interpret its content. Keep these findings separate.
+
+### Validation using an approved fixture
+
+1. Capture a request for an existing allowed resource.
+2. Request a nonexistent harmless resource and record the error response.
+3. Use an assessment fixture outside the intended resource directory, with owner approval, to test whether the directory boundary is enforced.
+4. Record whether the result contains fixture data, an error, a redirect or ordinary page content.
+
+```bash
+curl -i 'http://TARGET/index.php?language=english'
+curl -i 'http://TARGET/index.php?language=assessment-nonexistent'
+```
+
+| If observed | Next check |
+|---|---|
+| File path in error | Determine base directory and intended allowlist |
+| Forced extension | Review suffix handling and path resolution |
+| File is rendered | Distinguish file inclusion from download/read |
+| Source-like data exposed | Check whether the fixture was intended to be accessible |
+| Response blocked | Record boundary; do not assume it is universally enforced |
+
+The original notes include PHP filters, automated scanning, log poisoning and inclusion-to-execution techniques. This public edition explains the underlying branches but omits file-extraction and code-execution chains. Use synthetic fixtures rather than operating system or application secrets.
+
+**Study-note basis:** Local File Inclusion (LFI), Basic Bypasses, PHP Filters, Automated scanning, Log Poisoning.
+
 ## Assessment workflow
 
 ### 1. Locate path-like inputs

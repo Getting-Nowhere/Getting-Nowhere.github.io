@@ -13,6 +13,18 @@ Establish the rules, evidence standards and initial target inventory before test
 > Use this methodology only for systems and test identities within an explicitly authorized assessment. Validate the minimum necessary impact and preserve sanitized evidence.
 {: .tip }
 
+## Start with a working inventory
+
+| Record | Required values |
+|---|---|
+| Scope | Approved IP ranges, domains and exclusions |
+| Access | Issued test roles and permitted vantage points |
+| Constraints | Request budgets, maintenance windows, disruptive actions requiring approval |
+| Evidence | Output path, timestamp, source identity and redaction policy |
+| Leads | Asset, observation, prerequisite, status, next action |
+
+If a new hostname or subnet appears, verify scope before adding it. If a test needs a state change, establish the rollback procedure first. Mark each lead `confirmed`, `parked`, `inconclusive`, `not tested` or `out of scope`. The tracker and these operational gates are editorial organization of the enumeration principles in the notes.
+
 ## Assessment workflow
 
 ### 1. Establish authorization

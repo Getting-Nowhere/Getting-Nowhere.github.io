@@ -13,6 +13,86 @@ Map directory structure, authentication, accounts, delegated rights, GPOs and tr
 > Use this methodology only for systems and test identities within an explicitly authorized assessment. Validate the minimum necessary impact and preserve sanitized evidence.
 {: .tip }
 
+## Decision tree
+
+```text
+Domain indicators
+  |-- No approved account -> permitted anonymous visibility and domain identity
+  `-- Approved account -> shares, users, groups, SPNs and policy
+       |-- Delegated ACL -> verify source, target and effective permission
+       |-- GPO -> verify links and affected objects
+       |-- Trust -> check direction and filtering
+       `-- New approved identity -> repeat relevant enumeration
+```
+
+## 1. Identify domain infrastructure and anonymous visibility
+
+```bash
+smbclient -N -L //DC_IP
+rpcclient -N -U "" DC_IP
+```
+
+In an authorized RPC session:
+
+```text
+querydominfo
+enumdomusers
+getdompwinfo
+```
+
+If denied, record the boundary and proceed only with supplied test credentials. Confirm whether the target is a DC or member server; do not equate an SMB listener with a DC.
+
+## 2. Re-enumerate using an approved domain identity
+
+```powershell
+Get-ADDomain
+Get-ADUser -Filter *
+Get-ADGroup -Filter * | Select-Object Name
+Get-ADTrust -Filter *
+Get-ADUser -Filter {ServicePrincipalName -ne "$null"} -Properties ServicePrincipalName
+```
+
+ActiveDirectory module required. For the Linux workflow, the source notes use CrackMapExec for `--users`, `--groups`, `--shares` and `--loggedon-users` with supplied credentials. Evaluate each host's role and keep credential values out of public documentation.
+
+### What the results mean
+
+| Finding | Next check |
+|---|---|
+| Readable shares | SYSVOL, NETLOGON and approved data classification review |
+| SPN-bearing account | Service identity, privilege, encryption and password-management policy |
+| Pre-authentication disabled | Account's Kerberos configuration and business justification |
+| Nested groups | Effective membership and delegated permissions |
+| Domain trust | Direction, transitivity, filtering and authorized cross-boundary role |
+| LAPS delegation | Intended principals allowed to retrieve managed local passwords |
+
+## 3. Inspect permissions and security controls
+
+```powershell
+Get-Domain
+Get-DomainController
+Get-DomainGroupMember -Identity 'Domain Admins' -Recurse
+Get-DomainTrustMapping
+Get-AppLockerPolicy -Effective | Select-Object -ExpandProperty RuleCollections
+$ExecutionContext.SessionState.LanguageMode
+```
+
+PowerView is required for the `Get-Domain*` commands. Use graph collection only within the agreed scope. For each ACL edge record source principal, target, access right, inheritance and effective group membership. A displayed edge is a hypothesis until these conditions are confirmed.
+
+### Permission interpretation
+
+- `GenericAll`: broad control over the particular object, not every object in the domain.
+- `GenericWrite`: identify which attributes are actually writable and relevant.
+- `WriteDACL` / `WriteOwner`: distinguish ability to alter access policy from current access.
+- `ForceChangePassword`: identify delegated password-reset scope.
+- Replication rights: distinguish `DS-Replication-Get-Changes` and `DS-Replication-Get-Changes-All`; confirm the domain object and effective principal.
+- GPO permissions: verify the policy's links, security filtering and affected objects.
+
+### Iteration gate
+
+If a new authorized identity or host is available, repeat share, membership, ACL and remote-access inventory. If no further evidence exists, park the branch. Do not substitute credential dumping, ticket manipulation, poisoning or trust abuse for permission validation in this public guide.
+
+**Study-note basis:** Internal Enumeration of Domain, From Linux, From Windows, Enumerating Security Controls, ACL Enumeration, Privileged Access, DCSync, Domain Trust Primer.
+
 ## Assessment workflow
 
 ### 1. Understand the directory structure

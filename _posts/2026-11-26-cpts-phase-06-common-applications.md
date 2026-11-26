@@ -13,6 +13,44 @@ Recognize common products, verify exposure and assess product-specific configura
 > Use this methodology only for systems and test identities within an explicitly authorized assessment. Validate the minimum necessary impact and preserve sanitized evidence.
 {: .tip }
 
+## Decision tree
+
+```text
+Product indicator
+  |-- Uncertain identity -> corroborate with second indicator
+  `-- Product confirmed -> core + component versions
+       |-- Advisory match -> verify prerequisites and configuration
+       |-- Admin surface -> compare assigned role with expected permissions
+       `-- No supporting evidence -> record and continue
+```
+
+## Identify the product before selecting a product-specific check
+
+```bash
+nmap -p 80,443,8000,8080,8180,8888,10000 --open -oA web_discovery -iL scope_list
+curl -s http://TARGET/ | grep -i WordPress
+curl -s http://TARGET/ | grep -E 'themes|plugins'
+```
+
+If a site exposes a product name in its HTML, confirm using a second independent indicator such as asset paths, a version page or an authorized configuration inventory. Record the component version separately from the core version.
+
+| Product | First observation | Next check |
+|---|---|---|
+| WordPress | Theme or plugin asset paths | Identify installed component and version; verify advisory prerequisites |
+| Drupal | Core assets and module indicators | Module inventory and intended administrative routes |
+| Joomla | Template or extension references | Core and extension versions separately |
+| GitLab | Repository and sign-in interface | Compare intended project visibility with assigned role |
+| Jenkins | Build dashboard | Role boundaries, job configuration permissions, credential references without secret values |
+| Tomcat | Manager interface | Intended deployment and management permissions |
+| Splunk / PRTG | Monitoring application | Management network, roles and application access |
+| ColdFusion | Product paths or headers | Patch level and exposed administrative functionality |
+| osTicket | Ticket portal | Compare ticket and attachment visibility across test roles |
+| Thick client | Network requests or local configuration | Map backend endpoints and identify trust boundaries |
+
+**If a product appears vulnerable:** verify the installed build, affected component, enabled feature and required role. If any prerequisite is unknown, park the lead; do not turn a scanner advisory into a confirmed finding.
+
+**Study-note basis:** Application Discovery and Enumeration, WordPress Discovery and Enumeration, and the corresponding product discovery and attack chapters.
+
 ## Assessment workflow
 
 ### 1. Identify the actual product

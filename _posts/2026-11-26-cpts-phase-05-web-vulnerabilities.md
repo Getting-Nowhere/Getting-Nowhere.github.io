@@ -13,6 +13,36 @@ Select a dedicated validation workflow based on the observed input and security 
 > Use this methodology only for systems and test identities within an explicitly authorized assessment. Validate the minimum necessary impact and preserve sanitized evidence.
 {: .tip }
 
+## Decision tree
+
+```text
+Mapped endpoint
+  |-- Output rendering -> XSS
+  |-- Database behavior -> SQL injection
+  |-- OS-related functionality -> command injection
+  |-- File path or upload -> corresponding file assessment
+  |-- Object ID or role -> authorization assessment
+  |-- XML processing -> XXE
+  `-- Method or login behavior -> HTTP/authentication assessment
+```
+
+## Choose by observation, not by tool
+
+| Input or feature | First verification | Follow-up |
+|---|---|---|
+| Text reflected in response | Raw response versus DOM and output context | XSS |
+| Search/filter changes data | Stable baseline, syntax error or consistent true/false behavior | SQLi |
+| Network diagnostic | Ordinary output and command construction | Command injection |
+| Language/template parameter | Actual filesystem operation, path boundary | File inclusion |
+| Multipart form | Server-side checks and storage behavior | Upload |
+| Object identifier | Two assigned accounts, two synthetic objects | IDOR |
+| XML or XML-based document | Parser, DTD and external resolution settings | XXE |
+| Different method behavior | Same resource, same role, method-specific policy | HTTP methods |
+| Sign-in/reset | Failure marker, account policy, session state | Authentication |
+| Extra JSON properties | Server-side field allowlist and persistence | Mass assignment |
+
+If the baseline is unstable, stop vulnerability testing and fix the measurement. If the observed function does not match the suspected vulnerability, select a different branch. If a test requires a new account, use only an assigned account. Keep a negative control for every positive result.
+
 ## Assessment workflow
 
 ### 1. Start from evidence

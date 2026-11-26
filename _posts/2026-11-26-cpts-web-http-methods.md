@@ -13,6 +13,38 @@ Compare authorization and request processing across supported HTTP methods.
 > Use this methodology only for systems and test identities within an explicitly authorized assessment. Validate the minimum necessary impact and preserve sanitized evidence.
 {: .tip }
 
+## Decision tree
+
+```text
+Known resource
+  |-- OPTIONS lists methods -> confirm implemented operations
+  |-- GET/HEAD differ -> compare authorization, not body alone
+  |-- Method denied -> record restriction
+  `-- State-changing operation -> test disposable fixture only if approved
+```
+
+## Compare methods against the same resource
+
+```bash
+curl -i -X OPTIONS http://TARGET/RESOURCE
+curl -I http://TARGET/RESOURCE
+curl -i http://TARGET/RESOURCE
+```
+
+`OPTIONS` may advertise methods, but a method being advertised does not mean it is usable without authorization. HEAD normally omits a body, so compare headers and authorization behavior instead of body length.
+
+| If observed | Next check |
+|---|---|
+| GET requires login | Compare expected policy for HEAD and other supported methods |
+| OPTIONS lists methods | Confirm route actually implements those methods |
+| 405 returned | Record method restriction; inspect Allow header if present |
+| Different response between methods | Check whether authorization or only representation differs |
+| PUT/PATCH/DELETE supported | Test only an approved disposable resource and restore changes |
+
+The notes distinguish method-dependent authentication and method-dependent security filters. Verify policy coverage in the server routing and application middleware; do not infer bypass merely from a different status code.
+
+**Study-note basis:** Intro to HTTP Verb Tampering, Bypassing Basic Authentication, Bypassing Security Filters, Prevention.
+
 ## Assessment workflow
 
 ### 1. Map intended methods

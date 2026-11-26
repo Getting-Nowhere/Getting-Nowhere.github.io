@@ -13,6 +13,73 @@ Build a reliable asset and service inventory using infrastructure discovery and 
 > Use this methodology only for systems and test identities within an explicitly authorized assessment. Validate the minimum necessary impact and preserve sanitized evidence.
 {: .tip }
 
+## Decision tree
+
+```text
+Known in-scope target
+  |-- Host responds -> TCP inventory -> version identification
+  |-- No response -> check route and discovery reason -> classify uncertainty
+  `-- TCP inventory complete -> relevant UDP inventory
+       |-- HTTP -> web discovery
+       |-- AD indicators -> directory assessment
+       `-- Other protocol -> service-specific page
+```
+
+## Field workflow: from host discovery to a service inventory
+
+### 1. Discover hosts and preserve the result
+
+```bash
+sudo nmap -sn -oA discovery TARGET_SUBNET
+sudo nmap -sn -oA discovery-list -iL hosts.lst
+```
+
+If the host list is unexpectedly empty, inspect the discovery reason rather than immediately assuming the subnet is unused.
+
+```bash
+sudo nmap -sn -PE --reason TARGET_IP
+```
+
+### 2. Establish port state before version detection
+
+```bash
+sudo nmap -sS --top-ports=10 TARGET_IP
+sudo nmap -sS -p- -oA tcp-all TARGET_IP
+sudo nmap -sV -p PORT_LIST -oA services TARGET_IP
+sudo nmap -sU -F -oA udp-common TARGET_IP
+```
+
+`-sS` needs raw-packet privileges. A connect scan (`-sT`) is an alternative where those privileges are unavailable. Keep discovery, full port inventory and targeted version detection separate so results can be compared.
+
+### 3. Understand unexpected results
+
+```bash
+sudo nmap -sT -p PORT --reason --packet-trace TARGET_IP
+```
+
+| Observation | Interpretation | Next check |
+|---|---|---|
+| SYN/ACK | Listening TCP port | Identify protocol and version |
+| RST | Closed TCP port | Record; investigate only if expected open |
+| No reply or relevant ICMP error | Filtering is possible | Review route and filtering with owner |
+| UDP `open\|filtered` | No definitive response | Use a protocol-specific query |
+| Unknown version | Fingerprint is incomplete | Inspect banner and protocol behavior |
+
+### 4. Correlate names and addresses
+
+```bash
+dig DOMAIN
+dig NS DOMAIN
+host HOSTNAME
+curl -s 'https://crt.sh/?q=DOMAIN&output=json' | jq .
+```
+
+Certificate transparency records may be historical; resolve each discovered name and verify scope before adding it to the target list. An address used by a shared provider is not necessarily authorized.
+
+**Decision gate:** If HTTP is present, continue to web discovery; if SMB, LDAP and Kerberos coexist, establish domain context; otherwise use the protocol-specific checklist. Do not abandon service enumeration after finding the first interesting port.
+
+**Study-note basis:** All commands/NMAP, Footprinting, Host Enumeration, Digging DNS.
+
 ## Assessment workflow
 
 ### 1. Identify internet-facing infrastructure

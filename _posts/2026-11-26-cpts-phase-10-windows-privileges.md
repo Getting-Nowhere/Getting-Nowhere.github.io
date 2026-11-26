@@ -13,6 +13,86 @@ Review Windows tokens, groups, service permissions, scheduled tasks, OS controls
 > Use this methodology only for systems and test identities within an explicitly authorized assessment. Validate the minimum necessary impact and preserve sanitized evidence.
 {: .tip }
 
+## Decision tree
+
+```text
+Windows session
+  |-- Token privileges -> check enabled state and intended delegation
+  |-- Services -> inspect service ACL, binary ACL and run-as identity
+  |-- Scheduled tasks -> inspect principal, action and file ACL
+  |-- Special groups -> review delegated resource access
+  `-- Version lead -> verify build, patch and configuration
+       -> Document confirmed boundary or park
+```
+
+## 1. Inventory token, host and active services
+
+```cmd
+whoami /priv
+whoami /groups
+systeminfo
+tasklist /svc
+net user
+net localgroup
+net localgroup administrators
+net accounts
+netstat -ano
+query user
+```
+
+```powershell
+Get-HotFix | Format-Table -AutoSize
+Get-MpComputerStatus
+Get-AppLockerPolicy -Effective | Select-Object -ExpandProperty RuleCollections
+```
+
+Distinguish local and domain groups, enabled privileges and privileges merely present in the token. A privilege's name does not prove a usable path.
+
+## 2. Services: check three different permission boundaries
+
+```powershell
+Get-Service
+Get-CimInstance Win32_Service | Select-Object Name, StartName, State, PathName
+sc.exe qc SERVICE_NAME
+icacls "C:\Path\To\Service.exe"
+accesschk.exe -quvcw SERVICE_NAME
+```
+
+The source notes use AccessChk and SharpUp (`SharpUp.exe audit`) for permission review. They are external tools, not built-in commands. Use approved copies and verify manual results.
+
+| Check | Why it matters |
+|---|---|
+| Service object ACL | Who can change service configuration? |
+| Executable ACL | Who can modify the actual binary? |
+| Parent directory ACL | Who can create or replace relevant files? |
+| Service identity | Which account runs the service? |
+| Path quoting | Is an unquoted path actually ambiguous and is a relevant directory writable? |
+
+If one of these conditions is missing, do not conclude the service is exploitable. Record the permission and the exact service identity; no service restart or replacement is needed to establish the configuration finding.
+
+## 3. Scheduled tasks and applications
+
+```powershell
+Get-ScheduledTask | Select-Object TaskName,TaskPath,State
+Get-Process -Id PROCESS_ID
+Get-Service | Where-Object {$_.DisplayName -like '*PRODUCT*'}
+```
+
+Map listening ports to process IDs, then to executable paths and associated services. Inspect task principal, action and action-file ACL. Avoid `Win32_Product` on production systems because querying it can trigger MSI consistency checks; the source notes use it, but registry/inventory data is preferable when available.
+
+## 4. Token and group branches
+
+- `SeImpersonatePrivilege` / `SeAssignPrimaryTokenPrivilege`: check service-account context, OS build and actual token state.
+- `SeDebugPrivilege`: review why the account can access other processes; do not dump process memory to establish the assignment.
+- `SeTakeOwnershipPrivilege`: establish which objects are affected and why the privilege is present.
+- Backup, Server, Print, DNS, Event Log Readers and Hyper-V groups: distinguish each group's intended delegation and affected resource from general administrator membership.
+- UAC: distinguish a filtered administrator token from an ordinary user; check integrity level and elevation policy.
+- DLL-related findings: verify the actual loading process, DLL resolution and ACLs rather than assuming every missing DLL is a viable path.
+
+**Common misses:** service ACL versus binary ACL; inherited directory permissions; disabled tasks; group membership without effective access; unquoted paths without writable candidates; OS version without patch evidence.
+
+**Study-note basis:** Initial Enumeration, Situational Awareness, Weak Permissions, Vulnerable Services, Windows Privileges Overview, Windows Built in Groups, User Account Control, DLL Injection.
+
 ## Assessment workflow
 
 ### 1. Establish the Windows baseline
