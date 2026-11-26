@@ -1,7 +1,7 @@
 ---
 title: "Penetration Testing Methodology: From Reconnaissance to Reporting"
 date: 2026-11-26 18:00:00 +0530
-categories: [CPTS, Methodology]
+categories: [CPTS, Enumeration]
 tags: [pentesting, methodology, reconnaissance, enumeration, cpts]
 description: A comprehensive penetration testing methodology covering reconnaissance, service enumeration, web applications, privilege escalation, Active Directory, pivoting and reporting.
 toc: true
