@@ -1,12 +1,12 @@
 # ─────────────────────────────────────────────
 #  SITE SETTINGS  (edit these first)
 # ─────────────────────────────────────────────
-title: CPTS Methodology
+title: YourHandle
 tagline: Aspiring Pentester & CPTS Candidate
 description: Notes, walkthroughs and cheat sheets from my HTB CPTS journey. Enumeration, web attacks, privilege escalation and more.
 
 # Your GitHub Pages address, e.g. https://octocat.github.io
-url: "https://github.com/Getting-Nowhere/Getting-Nowhere.github.io.git"
+url: "https://YOURUSERNAME.github.io"
 baseurl: ""            # keep empty for a USERNAME.github.io repo
 lang: en
 timezone: Asia/Kolkata
